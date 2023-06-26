@@ -180,6 +180,26 @@ func (self *Tree) SelectedNode() *TreeNode {
 	return self.rows[self.SelectedRow]
 }
 
+func (self *Tree) SelectedNodeWithIndex() *TreeNode {
+	if len(self.rows) == 0 {
+		return nil
+	}
+	rowNow := self.SelectedRow
+	res := self.rows[rowNow]
+	lastLevel := res.level
+	for lastLevel > 0 {
+		rowNow--
+		if self.rows[rowNow].level == lastLevel {
+			continue
+		}
+		lastLevel--
+		tmp := *self.rows[rowNow]
+		tmp.Nodes = []*TreeNode{res}
+		res = &tmp
+	}
+	return res
+}
+
 func (self *Tree) ScrollUp() {
 	self.ScrollAmount(-1)
 }

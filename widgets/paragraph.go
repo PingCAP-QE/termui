@@ -6,6 +6,9 @@ package widgets
 
 import (
 	"image"
+	"io/ioutil"
+	"os"
+	"os/exec"
 
 	. "github.com/gizak/termui/v3"
 )
@@ -25,24 +28,46 @@ func NewParagraph() *Paragraph {
 	}
 }
 
-func (self *Paragraph) Draw(buf *Buffer) {
-	self.Block.Draw(buf)
+func (p *Paragraph) ScrollHalfPageUp() {}
 
-	cells := ParseStyles(self.Text, self.TextStyle)
-	if self.WrapText {
-		cells = WrapCells(cells, uint(self.Inner.Dx()))
+func (p *Paragraph) ScrollHalfPageDown() {}
+
+func (p *Paragraph) Get() string {
+	return p.Text
+}
+
+func (p *Paragraph) Edit() string {
+	ioutil.WriteFile("./.tmpfile", []byte(p.Text), 0644)
+	cmd := exec.Command("vim", "./.tmpfile")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+	tmp, err := ioutil.ReadFile("./.tmpfile")
+	if err != nil {
+		return ""
+	}
+	p.Text = string(tmp)
+	return p.Text
+}
+
+func (p *Paragraph) Draw(buf *Buffer) {
+	p.Block.Draw(buf)
+
+	cells := ParseStyles(p.Text, p.TextStyle)
+	if p.WrapText {
+		cells = WrapCells(cells, uint(p.Inner.Dx()))
 	}
 
 	rows := SplitCells(cells, '\n')
 
 	for y, row := range rows {
-		if y+self.Inner.Min.Y >= self.Inner.Max.Y {
+		if y+p.Inner.Min.Y >= p.Inner.Max.Y {
 			break
 		}
-		row = TrimCells(row, self.Inner.Dx())
+		row = TrimCells(row, p.Inner.Dx())
 		for _, cx := range BuildCellWithXArray(row) {
 			x, cell := cx.X, cx.Cell
-			buf.SetCell(cell, image.Pt(x, y).Add(self.Inner.Min))
+			buf.SetCell(cell, image.Pt(x, y).Add(p.Inner.Min))
 		}
 	}
 }
